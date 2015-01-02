@@ -7,6 +7,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 
 import java.io.IOException;
 
@@ -14,15 +15,8 @@ public class MusicService extends Service implements
         MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener {
     private MediaPlayer player = null;
     private final IBinder mBinder = new MusicBinder();
-
-    @Override
-    public void onCreate() { // initiate the MediaPlayer instance
-        player = new MediaPlayer();
-
-        player.setOnCompletionListener(this);
-        player.setOnPreparedListener(this);
-        player.setOnErrorListener(this);
-    }
+    private int duration;
+    private String songTitle = "1.mp3";
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -37,6 +31,12 @@ public class MusicService extends Service implements
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        // initiate the MediaPlayer instance
+        player = new MediaPlayer();
+
+        player.setOnCompletionListener(this);
+        player.setOnPreparedListener(this);
+        player.setOnErrorListener(this);
         Uri myUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.test);
         try {
             player.setDataSource(getApplicationContext(), myUri);
@@ -49,6 +49,7 @@ public class MusicService extends Service implements
         } catch (IllegalStateException e) {
             e.printStackTrace();
         }
+
         return START_STICKY;
     }
 
@@ -60,6 +61,8 @@ public class MusicService extends Service implements
     @Override
     public void onCompletion(MediaPlayer mp) {
 // shuffle or loop
+        //update ui
+        updateUI();
     }
 
     @Override
@@ -69,11 +72,12 @@ public class MusicService extends Service implements
 
     @Override
     public void onPrepared(MediaPlayer mp) {
-        mp.start();
+        duration = player.getDuration();
+        updateUI();
     }
 
     public void playPause() {
-        if (player.isPlaying()) {
+        if (this.isPlaying()) {
             player.pause();
         } else {
             player.start();
@@ -84,5 +88,29 @@ public class MusicService extends Service implements
         MusicService getService() {
             return MusicService.this;
         }
+    }
+
+    public int getProgress() {
+        return player.getCurrentPosition();
+    }
+
+    public boolean isPlaying() {
+        return player.isPlaying();
+    }
+
+    public void seekTo(int progress) {
+        try {
+            player.seekTo(progress);
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updateUI() {
+        Intent updateIntent = new Intent("UPDATE_UI");
+        // add data
+        updateIntent.putExtra("Title", songTitle);
+        updateIntent.putExtra("Duration", duration);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(updateIntent);
     }
 }
