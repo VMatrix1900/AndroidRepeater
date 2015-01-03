@@ -34,18 +34,21 @@
         <ImageButton
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
-            android:id="@+id/repeat"
+            android:id="@+id/shuffle"
             android:layout_gravity="center_horizontal"
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true" />
 
-        <ImageButton
+        <TextView
             android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:id="@+id/shuffle"
+            android:layout_height="match_parent"
+            android:text="@string/repeatText"
+            android:id="@+id/ABRepeat"
+            android:layout_centerVertical="true"
+            android:layout_centerHorizontal="true"
+            android:textSize="@dimen/font_size"
             android:clickable="true"
-            android:layout_gravity="right"
-            android:layout_centerHorizontal="true" />
+            android:gravity="center" />
     </RelativeLayout>
 
     <LinearLayout

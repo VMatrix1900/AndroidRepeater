@@ -6,11 +6,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -29,23 +33,29 @@ public class MainActivity extends ActionBarActivity {
     private TextView currentTimeLabel;
     private TextView totalTimeLabel;
     private TextView songNameLabel;
+    private TextView ABRepeatButton;
 
     private MusicService mSrv;
     private boolean mBound = false;
     private Intent mIntent;
     // update seekBar and play time etc.
     private final Handler uiHandler = new Handler();
+    private AppStatus status;
+
+    private SpannableString text;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        // get application
+        status = (AppStatus) getApplication();
+        // bind service
         mIntent = new Intent(this, MusicService.class);
         bindService(mIntent, mConnection, Context.BIND_AUTO_CREATE);
         // also start service, keep running in the background
         startService(mIntent);
-
+        // get view
         playButton = (ImageButton) findViewById(R.id.play);
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -59,7 +69,72 @@ public class MainActivity extends ActionBarActivity {
         currentTimeLabel = (TextView) findViewById(R.id.current);
         totalTimeLabel = (TextView) findViewById(R.id.total);
         songNameLabel = (TextView) findViewById(R.id.title);
+        ABRepeatButton = (TextView) findViewById(R.id.ABRepeat);
+        text = new SpannableString("A \u2194 B");
+        renderABRepeatButton(status.getABRepeatMode());
+        ABRepeatButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ABRepeat();
+            }
+        });
 
+    }
+
+    private void renderABRepeatButton(int ABRepeatMode) {
+        switch (ABRepeatMode) {
+            case AppStatus.A_PRESSED:
+                text.setSpan(new ForegroundColorSpan(Color.RED), 0, 1, 0);
+                ABRepeatButton.setText(text, TextView.BufferType.SPANNABLE);
+                break;
+            case AppStatus.B_PRESSED:
+                text.setSpan(new ForegroundColorSpan(Color.RED), 0, 1, 0);
+                text.setSpan(new ForegroundColorSpan(Color.RED), 4, 5, 0);
+                ABRepeatButton.setText(text, TextView.BufferType.SPANNABLE);
+                break;
+            case AppStatus.ABREPEAT_OFF:
+                ABRepeatButton.setText(R.string.repeatText);
+                break;
+        }
+    }
+
+    private void ABRepeat() {
+        switch (status.getABRepeatMode()) {
+            case AppStatus.ABREPEAT_OFF:
+                renderABRepeatButton(AppStatus.A_PRESSED);
+                // set repeat start point
+                new AsyncTask() {
+                    @Override
+                    protected Object doInBackground(Object[] params) {
+                        mSrv.setPointA();
+                        return null;
+                    }
+                }.execute();
+                break;
+            case AppStatus.A_PRESSED:
+                renderABRepeatButton(AppStatus.B_PRESSED);
+                // set repeat end point
+                new AsyncTask() {
+                    @Override
+                    protected Object doInBackground(Object[] params) {
+                        mSrv.setPointB();
+                        return null;
+                    }
+                }.execute();
+                break;
+            case AppStatus.B_PRESSED:
+                renderABRepeatButton(AppStatus.ABREPEAT_OFF);
+                // clear repeat range
+                new AsyncTask() {
+                    @Override
+                    protected Object doInBackground(Object[] params) {
+                        mSrv.clearABRepeat();
+                        return null;
+                    }
+                }.execute();
+                break;
+
+        }
     }
 
     @Override
@@ -142,7 +217,21 @@ public class MainActivity extends ActionBarActivity {
     };
 
     private void playPause() {
-        mSrv.playPause();
+        if (mSrv.isPlaying()) {
+            uiHandler.removeCallbacks(updateSeekBar);
+        } else {
+            uiHandler.postDelayed(updateSeekBar, 100);
+        }
+
+        // playstate toggle in the background.
+        new AsyncTask() {
+            @Override
+            protected Object doInBackground(Object[] params) {
+                mSrv.playPause();
+                return null;
+            }
+        }.execute();
+
     }
 
     private ServiceConnection mConnection = new ServiceConnection() {

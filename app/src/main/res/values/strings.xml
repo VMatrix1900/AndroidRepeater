@@ -7,5 +7,7 @@
     <string name="startTime">00:00</string>
     <string name="totalTime">3:14</string>
     <string name="songTitle">Untitle</string>
+    <string name="repeatText">A &#x2194; B</string>
+    <string name="app_status_pref_file_key">com.vincent.repeater.status</string>
 
 </resources>
