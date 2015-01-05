@@ -12,21 +12,21 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.ActionBarActivity;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ImageButton;
+import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
 
 
-public class MainActivity extends ActionBarActivity {
+public class PlayingActivity extends BaseActivity {
 
     private ImageButton playButton;
     private SeekBar mSeekBar;
@@ -34,8 +34,11 @@ public class MainActivity extends ActionBarActivity {
     private TextView totalTimeLabel;
     private TextView songNameLabel;
     private TextView ABRepeatButton;
+    private ListView tagsList;
+    private TagAdapter tagAdapter;
+    private ArrayList<Tag> tags;
 
-    private MusicService mSrv;
+    private MusicService mSrv = null;
     private boolean mBound = false;
     private Intent mIntent;
     // update seekBar and play time etc.
@@ -44,10 +47,16 @@ public class MainActivity extends ActionBarActivity {
 
     private SpannableString text;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+
+        getLayoutInflater().inflate(R.layout.playing_layout, frameLayout);
+
+        mDrawerList.setItemChecked(position, true);
+        setTitle(navItems[position]);
+
         // get application
         status = (AppStatus) getApplication();
         // bind service
@@ -76,6 +85,20 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
                 ABRepeat();
+            }
+        });
+
+        tagsList = (ListView) findViewById(R.id.tags);
+
+        tags = new ArrayList<Tag>();
+        tagAdapter = new TagAdapter(this, tags);
+
+        tagsList.setAdapter(tagAdapter);
+
+        tagsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                mSrv.seekTo(((Tag) tagAdapter.getItem(position)).getStartTime());
             }
         });
 
@@ -138,6 +161,41 @@ public class MainActivity extends ActionBarActivity {
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+
+        getMenuInflater().inflate(R.menu.menu_play, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        // The action bar home/up action should open or close the drawer.
+        // ActionBarDrawerToggle will take care of this.
+        if (actionBarDrawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
+
+        switch (item.getItemId()) {
+            case R.id.action_add_tag:
+                int startTime = 0;
+                int endTime = mSrv.getDuration();
+                int progress = mSrv.getProgress();
+                if (progress > 2500) {
+                    startTime = progress - 2500;
+                }
+                if (progress < endTime - 2500) {
+                    endTime = progress + 2500;
+                }
+                tags.add(tags.size(), new Tag(startTime, endTime, "default"));
+                tagAdapter.notifyDataSetChanged();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
     protected void onStart() {
         // local broadcast manager to update ui(textView, seekBar max etc)
         LocalBroadcastManager.getInstance(this).registerReceiver(updateUI,
@@ -158,7 +216,7 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        uiHandler.postDelayed(updateSeekBar, 100);
+        uiHandler.postDelayed(updateSeekBar, 500);
     }
 
     @Override
@@ -170,10 +228,7 @@ public class MainActivity extends ActionBarActivity {
     private SeekBar.OnSeekBarChangeListener seekBarChangeListener = new SeekBar.OnSeekBarChangeListener() {
         @Override
         public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-            long min = TimeUnit.MILLISECONDS.toMinutes(progress);
-            currentTimeLabel.setText(String.format("%d:%d",
-                    min, TimeUnit.MILLISECONDS.toSeconds(progress) -
-                            TimeUnit.MINUTES.toSeconds(min)));
+            currentTimeLabel.setText(Utilities.milliSecondsToTimer(progress));
             if (fromUser) {
                 mSrv.seekTo(progress);
             }
@@ -194,10 +249,12 @@ public class MainActivity extends ActionBarActivity {
     private Runnable updateSeekBar = new Runnable() {
         @Override
         public void run() {
-            int progress = mSrv.getProgress();
-            mSeekBar.setProgress(progress);
+            if (mSrv != null) {
+                int progress = mSrv.getProgress();
+                mSeekBar.setProgress(progress);
 
-            uiHandler.postDelayed(this, 500);
+                uiHandler.postDelayed(this, 500);
+            } else uiHandler.postDelayed(this, 500);
         }
     };
 
@@ -206,13 +263,10 @@ public class MainActivity extends ActionBarActivity {
         public void onReceive(Context context, Intent intent) {
             String songTitle = intent.getStringExtra("Title");
             int total = intent.getIntExtra("Duration", 10000);
-            Log.d("receiver", "receive" + songTitle + total);
+//            Log.d("receiver", "receive" + songTitle + total);
             mSeekBar.setMax(total);
             songNameLabel.setText(songTitle);
-            long min = TimeUnit.MILLISECONDS.toMinutes(total);
-            totalTimeLabel.setText(String.format("%d:%d",
-                    min, TimeUnit.MILLISECONDS.toSeconds(total) -
-                            TimeUnit.MINUTES.toSeconds(min)));
+            totalTimeLabel.setText(Utilities.milliSecondsToTimer(total));
         }
     };
 
@@ -249,28 +303,6 @@ public class MainActivity extends ActionBarActivity {
             mBound = false;
         }
     };
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
 
     @Override
     protected void onDestroy() {

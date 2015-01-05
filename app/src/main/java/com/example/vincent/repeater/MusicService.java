@@ -142,6 +142,10 @@ public class MusicService extends Service implements
         return player.getCurrentPosition();
     }
 
+    public int getDuration() {
+        return player.getDuration();
+    }
+
     public boolean isPlaying() {
         return player.isPlaying();
     }
