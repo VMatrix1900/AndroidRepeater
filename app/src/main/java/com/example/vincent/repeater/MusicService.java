@@ -149,6 +149,17 @@ public class MusicService extends Service implements
         }
     }
 
+    public void forward() {
+        int progress = getProgress() + 3000;
+        int duration = getDuration();
+        player.seekTo(progress < duration ? progress : duration);
+    }
+
+    public void rewind() {
+        int progress = getProgress() - 3000;
+        player.seekTo(progress > 0 ? progress : 0);
+    }
+
     private void updateUI() {
         Intent updateIntent = new Intent("UPDATE_UI");
         // add data
