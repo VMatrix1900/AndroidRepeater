@@ -50,7 +50,7 @@ public class BaseActivity extends ActionBarActivity {
 
         navItems = getResources().getStringArray(R.array.nav_drawer_items);
         // set up the drawer's list view with items and click listener
-        mDrawerList.setAdapter(new ArrayAdapter<String>(this, R.layout.drawer_list_item, navItems));
+        mDrawerList.setAdapter(new ArrayAdapter<>(this, R.layout.drawer_list_item, navItems));
         mDrawerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
             @Override
@@ -142,7 +142,7 @@ public class BaseActivity extends ActionBarActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
 
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+//        getMenuInflater().inflate(R.menu.menu_main, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -154,26 +154,26 @@ public class BaseActivity extends ActionBarActivity {
         if (actionBarDrawerToggle.onOptionsItemSelected(item)) {
             return true;
         }
-
-        switch (item.getItemId()) {
-            case R.id.action_settings:
-                return true;
-
-            default:
+//
+//        switch (item.getItemId()) {
+//            case R.id.action_settings:
+//                return true;
+//
+//            default:
                 return super.onOptionsItemSelected(item);
-        }
+//        }
     }
 
     /* Called whenever we call invalidateOptionsMenu() */
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         // If the nav drawer is open, hide action items related to the content view
-        boolean drawerOpen = mDrawerLayout.isDrawerOpen(mDrawerList);
-        menu.findItem(R.id.action_settings).setVisible(!drawerOpen);
+//        boolean drawerOpen = mDrawerLayout.isDrawerOpen(mDrawerList);
+//        menu.findItem(R.id.action_settings).setVisible(!drawerOpen);
         return super.onPrepareOptionsMenu(menu);
     }
 
-    /* We can override onBackPressed method to toggle navigation drawer*/
+    /* We can override onBackPressed method to toggle navigation drawer
     @Override
     public void onBackPressed() {
         if (mDrawerLayout.isDrawerOpen(mDrawerList)) {
@@ -181,5 +181,9 @@ public class BaseActivity extends ActionBarActivity {
         } else {
             mDrawerLayout.openDrawer(mDrawerList);
         }
+    }*/
+
+    public boolean getDrawerOpen() {
+        return mDrawerLayout.isDrawerOpen(mDrawerList);
     }
 }

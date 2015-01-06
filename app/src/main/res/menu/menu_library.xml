@@ -5,11 +5,12 @@
     <item
         android:id="@+id/action_rescan"
         android:title="@string/action_rescan"
+        android:icon="@drawable/matte_rescan"
         android:orderInCategory="1"
         app:showAsAction="ifRoom" />
-    <item
-        android:id="@+id/action_settings"
-        android:title="@string/action_settings"
-        android:orderInCategory="100"
-        app:showAsAction="never" />
+    <!--<item-->
+    <!--android:id="@+id/action_settings"-->
+    <!--android:title="@string/action_settings"-->
+    <!--android:orderInCategory="100"-->
+    <!--app:showAsAction="never" />-->
 </menu>

@@ -22,4 +22,10 @@
     <!-- Nav Drawer accessebility -->
     <string name="open_drawer">Drawer Open</string>
     <string name="close_drawer">Drawer Close</string>
+    <string name="action_delete">delete</string>
+    <string name="action_edit">Edit description</string>
+    <string name="edit_hint">add description</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="dialog_title">Add a tag descriptioin</string>
 </resources>

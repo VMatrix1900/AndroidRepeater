@@ -1,6 +1,7 @@
 package com.example.vincent.repeater;
 
 import android.content.Context;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,8 +19,8 @@ public class TagAdapter extends BaseAdapter {
     private ArrayList<Tag> tags;
     private LayoutInflater tagInf;
 
-    public TagAdapter(Context c, ArrayList<Tag> tags) {
-        this.tags = tags;
+    public TagAdapter(Context c) {
+        this.tags = new ArrayList<>();
         this.tagInf = LayoutInflater.from(c);
     }
 
@@ -51,5 +52,25 @@ public class TagAdapter extends BaseAdapter {
         startTimeView.setText(Utilities.milliSecondsToTimer(currentTag.getStartTime()));
         endTimeView.setText(Utilities.milliSecondsToTimer(currentTag.getEndTime()));
         return tagLay;
+    }
+
+    public void addTag(int startTime, int endTime, String aDefault) {
+        tags.add(new Tag(startTime, endTime, aDefault));
+    }
+
+    public void removeTags(SparseBooleanArray checked) {
+        for (int i = checked.size() - 1; i >= 0; i--) {
+            tags.remove(checked.keyAt(i));
+        }
+        notifyDataSetChanged();
+
+    }
+
+    public void changeAllTagDescription(SparseBooleanArray checked, String newDescription) {
+        for (int i = checked.size() - 1; i >= 0; i--) {
+            tags.get(checked.keyAt(i)).setDescription(newDescription);
+        }
+
+        notifyDataSetChanged();
     }
 }

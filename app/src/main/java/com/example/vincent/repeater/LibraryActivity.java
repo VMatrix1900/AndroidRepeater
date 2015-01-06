@@ -89,26 +89,28 @@ public class LibraryActivity extends BaseActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
 
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.menu_library, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
-        // The action bar home/up action should open or close the drawer.
-        // ActionBarDrawerToggle will take care of this.
-        if (actionBarDrawerToggle.onOptionsItemSelected(item)) {
-            return true;
-        }
-
         switch (item.getItemId()) {
-            case R.id.action_settings:
-                return true;
+            case R.id.action_rescan:
+                mAdapter.notifyDataSetChanged();
+                return super.onOptionsItemSelected(item);
 
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        // If the nav drawer is open, hide action items related to the content view
+        menu.findItem(R.id.action_rescan).setVisible(!this.getDrawerOpen());
+        return super.onPrepareOptionsMenu(menu);
     }
 
     @Override

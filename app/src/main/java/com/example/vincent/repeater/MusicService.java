@@ -2,7 +2,6 @@ package com.example.vincent.repeater;
 
 import android.app.Service;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -19,8 +18,7 @@ public class MusicService extends Service implements
     private final IBinder mBinder = new MusicBinder();
     private int duration;
     private String songTitle = "1.mp3";
-    //    private AppStatus status;
-    private SharedPreferences.Editor editor;
+    private AppStatus status;
 
     private int pointA = 0;
     private int pointB = 0;
@@ -40,8 +38,7 @@ public class MusicService extends Service implements
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // get app status
-//        status = (AppStatus) getApplicationContext();
-        editor = ((AppStatus) getApplicationContext()).getSharedPreferences().edit();
+        status = (AppStatus) getApplicationContext();
         // initiate the MediaPlayer instance
         player = new MediaPlayer();
 
@@ -97,18 +94,14 @@ public class MusicService extends Service implements
 
     public void setPointA() {
         pointA = player.getCurrentPosition();
-        // update app status
-        editor.putInt(AppStatus.ABREPEAT_MODE, AppStatus.A_PRESSED);
-        editor.commit();
+        status.toggleABReapeatMode();
     }
 
     public void setPointB() {
         pointB = player.getCurrentPosition();
         // start repeat;
         ABRepeatHandler.postDelayed(checkABRepeat, 100);
-        // update app status
-        editor.putInt(AppStatus.ABREPEAT_MODE, AppStatus.B_PRESSED);
-        editor.commit();
+        status.toggleABReapeatMode();
     }
 
     private Runnable checkABRepeat = new Runnable() {
@@ -127,9 +120,7 @@ public class MusicService extends Service implements
         ABRepeatHandler.removeCallbacks(checkABRepeat);
         pointA = 0;
         pointB = 0;
-        // update app status
-        editor.putInt(AppStatus.ABREPEAT_MODE, AppStatus.ABREPEAT_OFF);
-        editor.commit();
+        status.toggleABReapeatMode();
     }
 
     public class MusicBinder extends Binder {

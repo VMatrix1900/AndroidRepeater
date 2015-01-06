@@ -27,11 +27,15 @@ public class AppStatus extends Application {
 
     private static SharedPreferences status;
 
+    private SharedPreferences.Editor editor;
+
     @Override
     public void onCreate() {
         super.onCreate();
         status = getSharedPreferences(
                 getString(R.string.app_status_pref_file_key), Context.MODE_PRIVATE);
+        editor = ((AppStatus) getApplicationContext()).getSharedPreferences().edit();
+
     }
 
     public SharedPreferences getSharedPreferences() {
@@ -42,4 +46,56 @@ public class AppStatus extends Application {
         return status.getInt(ABREPEAT_MODE, ABREPEAT_OFF);
     }
 
+    public int getShuffleMode() {
+        return status.getInt(SHUFFLE_MODE, SHUFFLE_OFF);
+    }
+
+    public int getRepeatMode() {
+        return status.getInt(REPEAT_MODE, REPEAT_OFF);
+    }
+
+    public void toggleShuffleMode() {
+
+        switch (getShuffleMode()) {
+            case SHUFFLE_OFF:
+                editor.putInt(SHUFFLE_MODE, SHUFFLE_ON);
+                editor.commit();
+                break;
+            case SHUFFLE_ON:
+                editor.putInt(SHUFFLE_MODE, SHUFFLE_OFF);
+                editor.commit();
+                break;
+        }
+
+    }
+
+    public void toggleReapeatMode() {
+        switch (getRepeatMode()) {
+            case REPEAT_OFF:
+                editor.putInt(REPEAT_MODE, REPEAT_ON);
+                editor.commit();
+                break;
+            case REPEAT_ON:
+                editor.putInt(REPEAT_MODE, REPEAT_OFF);
+                editor.commit();
+                break;
+        }
+    }
+
+    public void toggleABReapeatMode() {
+        switch (getABRepeatMode()) {
+            case ABREPEAT_OFF:
+                editor.putInt(ABREPEAT_MODE, A_PRESSED);
+                editor.commit();
+                break;
+            case A_PRESSED:
+                editor.putInt(ABREPEAT_MODE, B_PRESSED);
+                editor.commit();
+                break;
+            case B_PRESSED:
+                editor.putInt(ABREPEAT_MODE, ABREPEAT_OFF);
+                editor.commit();
+                break;
+        }
+    }
 }

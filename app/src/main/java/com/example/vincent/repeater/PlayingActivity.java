@@ -1,5 +1,6 @@
 package com.example.vincent.repeater;
 
+import android.app.DialogFragment;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -14,19 +15,20 @@ import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
+import android.view.ActionMode;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import java.util.ArrayList;
 
-
-public class PlayingActivity extends BaseActivity {
+public class PlayingActivity extends BaseActivity implements EditDialogFragment.NoticeDialogListener {
 
     private ImageButton playButton;
     private SeekBar mSeekBar;
@@ -35,8 +37,13 @@ public class PlayingActivity extends BaseActivity {
     private TextView songNameLabel;
     private TextView ABRepeatButton;
     private ListView tagsList;
+    private ImageButton loopButton;
+    private ImageButton shuffleButton;
+    private ImageButton ffButton;
+    private ImageButton rwButton;
+    private ImageButton nextButton;
+    private ImageButton prevButton;
     private TagAdapter tagAdapter;
-    private ArrayList<Tag> tags;
 
     private MusicService mSrv = null;
     private boolean mBound = false;
@@ -78,6 +85,7 @@ public class PlayingActivity extends BaseActivity {
         currentTimeLabel = (TextView) findViewById(R.id.current);
         totalTimeLabel = (TextView) findViewById(R.id.total);
         songNameLabel = (TextView) findViewById(R.id.title);
+
         ABRepeatButton = (TextView) findViewById(R.id.ABRepeat);
         text = new SpannableString("A \u2194 B");
         renderABRepeatButton(status.getABRepeatMode());
@@ -88,10 +96,35 @@ public class PlayingActivity extends BaseActivity {
             }
         });
 
+        loopButton = (ImageButton) findViewById(R.id.loop);
+        renderLoopButton();
+        loopButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                status.toggleReapeatMode();
+                renderLoopButton();
+            }
+        });
+
+        shuffleButton = (ImageButton) findViewById(R.id.shuffle);
+        renderShuffleButton();
+        shuffleButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                status.toggleShuffleMode();
+                renderShuffleButton();
+            }
+        });
+
+        prevButton = (ImageButton) findViewById(R.id.previousList);
+        rwButton = (ImageButton) findViewById(R.id.previousSong);
+        ffButton = (ImageButton) findViewById(R.id.nextSong);
+        nextButton = (ImageButton) findViewById(R.id.nextList);
+
+
         tagsList = (ListView) findViewById(R.id.tags);
 
-        tags = new ArrayList<Tag>();
-        tagAdapter = new TagAdapter(this, tags);
+        tagAdapter = new TagAdapter(this);
 
         tagsList.setAdapter(tagAdapter);
 
@@ -102,6 +135,76 @@ public class PlayingActivity extends BaseActivity {
             }
         });
 
+        tagsList.setMultiChoiceModeListener(new AbsListView.MultiChoiceModeListener() {
+
+            @Override
+            public void onItemCheckedStateChanged(ActionMode mode, int position,
+                                                  long id, boolean checked) {
+                // Here you can do something when items are selected/de-selected,
+                // such as update the title in the CAB
+            }
+
+            @Override
+            public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                // Respond to clicks on the actions in the CAB
+                switch (item.getItemId()) {
+                    case R.id.menu_delete:
+                        tagAdapter.removeTags(tagsList.getCheckedItemPositions());
+
+                        mode.finish(); // Action picked, so close the CAB
+                        return true;
+                    case R.id.menu_edit:
+                        EditDialogFragment editFragment = new EditDialogFragment();
+                        editFragment.show(getFragmentManager(), "editor");
+                    default:
+                        return false;
+                }
+            }
+
+            @Override
+            public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+                // Inflate the menu for the CAB
+                MenuInflater inflater = mode.getMenuInflater();
+                inflater.inflate(R.menu.contextmenu_play, menu);
+                return true;
+            }
+
+            @Override
+            public void onDestroyActionMode(ActionMode mode) {
+                // Here you can make any necessary updates to the activity when
+                // the CAB is removed. By default, selected items are deselected/unchecked.
+            }
+
+            @Override
+            public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                // Here you can perform updates to the CAB due to
+                // an invalidate() request
+                return false;
+            }
+        });
+
+    }
+
+    private void renderLoopButton() {
+        switch (status.getRepeatMode()) {
+            case AppStatus.REPEAT_ON:
+                loopButton.setImageResource(R.drawable.matte_repeat_song);
+                break;
+            case AppStatus.REPEAT_OFF:
+                loopButton.setImageResource(R.drawable.matte_perm_repeat_song);
+                break;
+        }
+    }
+
+    private void renderShuffleButton() {
+        switch (status.getShuffleMode()) {
+            case AppStatus.SHUFFLE_ON:
+                shuffleButton.setImageResource(R.drawable.matte_shuffle_all);
+                break;
+            case AppStatus.SHUFFLE_OFF:
+                shuffleButton.setImageResource(R.drawable.matte_perm_shuffle_all);
+                break;
+        }
     }
 
     private void renderABRepeatButton(int ABRepeatMode) {
@@ -160,21 +263,55 @@ public class PlayingActivity extends BaseActivity {
         }
     }
 
+    /*
+    private ActionMode.Callback mActionModeCallback = new ActionMode.Callback() {
+
+        // Called when the action mode is created; startActionMode() was called
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            // Inflate a menu resource providing context menu items
+            MenuInflater inflater = mode.getMenuInflater();
+            inflater.inflate(R.menu.context_menu, menu);
+            return true;
+        }
+
+        // Called each time the action mode is shown. Always called after onCreateActionMode, but
+        // may be called multiple times if the mode is invalidated.
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            return false; // Return false if nothing is done
+        }
+
+        // Called when the user selects a contextual menu item
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            switch (item.getItemId()) {
+                case R.id.menu_share:
+                    shareCurrentItem();
+                    mode.finish(); // Action picked, so close the CAB
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        // Called when the user exits the action mode
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+            mActionMode = null;
+        }
+    };
+
+*/
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
 
         getMenuInflater().inflate(R.menu.menu_play, menu);
-        return super.onCreateOptionsMenu(menu);
+        return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-
-        // The action bar home/up action should open or close the drawer.
-        // ActionBarDrawerToggle will take care of this.
-        if (actionBarDrawerToggle.onOptionsItemSelected(item)) {
-            return true;
-        }
 
         switch (item.getItemId()) {
             case R.id.action_add_tag:
@@ -187,12 +324,19 @@ public class PlayingActivity extends BaseActivity {
                 if (progress < endTime - 2500) {
                     endTime = progress + 2500;
                 }
-                tags.add(tags.size(), new Tag(startTime, endTime, "default"));
+                tagAdapter.addTag(startTime, endTime, "default");
                 tagAdapter.notifyDataSetChanged();
-                return true;
+                return super.onOptionsItemSelected(item);
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        // If the nav drawer is open, hide action items related to the content view
+        menu.findItem(R.id.action_add_tag).setVisible(!this.getDrawerOpen());
+        return super.onPrepareOptionsMenu(menu);
     }
 
     @Override
@@ -317,5 +461,12 @@ public class PlayingActivity extends BaseActivity {
 
         // stop service
         stopService(mIntent);
+    }
+
+    @Override
+    public void onDialogPositiveClick(DialogFragment dialog, String description) {
+        // update description
+        tagAdapter.changeAllTagDescription(tagsList.getCheckedItemPositions(), description);
+
     }
 }
