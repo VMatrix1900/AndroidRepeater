@@ -16,7 +16,7 @@
     <string-array name="nav_drawer_items">
         <item>Playing</item>
         <item>Library</item>
-        <item>Settings</item>
+        <!--<item>Settings</item>-->
     </string-array>
 
     <!-- Nav Drawer accessebility -->

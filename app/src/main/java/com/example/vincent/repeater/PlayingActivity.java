@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -64,10 +65,16 @@ public class PlayingActivity extends BaseActivity implements EditDialogFragment.
         mDrawerList.setItemChecked(position, true);
         setTitle(navItems[position]);
 
+        ComponentName comp = new ComponentName("com.example.vincent.repeater", "com.example.vincent.repeater.MusicService");
+        mIntent = getIntent();
+        mIntent.setComponent(comp);
+        if (mIntent.getExtras() == null) {
+            mIntent.setDataAndType(Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.test), "audio/*");
+        }
         // get application
         status = (AppStatus) getApplication();
         // bind service
-        mIntent = new Intent(this, MusicService.class);
+
         bindService(mIntent, mConnection, Context.BIND_AUTO_CREATE);
         // also start service, keep running in the background
         startService(mIntent);
@@ -117,10 +124,14 @@ public class PlayingActivity extends BaseActivity implements EditDialogFragment.
         });
 
         prevButton = (ImageButton) findViewById(R.id.previousList);
-        rwButton = (ImageButton) findViewById(R.id.previousSong);
-        ffButton = (ImageButton) findViewById(R.id.nextSong);
-        nextButton = (ImageButton) findViewById(R.id.nextList);
+        prevButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                playPrevious();
+            }
+        });
 
+        rwButton = (ImageButton) findViewById(R.id.previousSong);
         rwButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -128,6 +139,7 @@ public class PlayingActivity extends BaseActivity implements EditDialogFragment.
             }
         });
 
+        ffButton = (ImageButton) findViewById(R.id.nextSong);
         ffButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -135,6 +147,13 @@ public class PlayingActivity extends BaseActivity implements EditDialogFragment.
             }
         });
 
+        nextButton = (ImageButton) findViewById(R.id.nextList);
+        nextButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                playNext();
+            }
+        });
 
         tagsList = (ListView) findViewById(R.id.tags);
 
@@ -197,6 +216,14 @@ public class PlayingActivity extends BaseActivity implements EditDialogFragment.
             }
         });
 
+    }
+
+    private void playPrevious() {
+        mSrv.playPrevious();
+    }
+
+    private void playNext() {
+        mSrv.playNext();
     }
 
     private void forward() {

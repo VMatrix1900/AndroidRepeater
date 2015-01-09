@@ -1,18 +1,24 @@
 package com.example.vincent.repeater;
 
 import android.app.LoaderManager;
+import android.content.ComponentName;
 import android.content.CursorLoader;
+import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
+
+import java.util.ArrayList;
 
 /**
  * Created by Vincent on 1/4/15.
@@ -22,6 +28,7 @@ public class LibraryActivity extends BaseActivity
         implements LoaderManager.LoaderCallbacks<Cursor> {
     private ListView songList;
     private SimpleCursorAdapter mAdapter;
+    private ArrayList<Integer> songIds;
 
     private String[] PROJ = {MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.DATA,
@@ -56,6 +63,7 @@ public class LibraryActivity extends BaseActivity
         setTitle(navItems[position]);
 
         songList = (ListView) findViewById(R.id.music_lib);
+        songIds = new ArrayList<>();
 
         SELECTIONARGS[0] = Environment.getExternalStorageDirectory().getPath() + "/Repeater/%";
 
@@ -83,6 +91,28 @@ public class LibraryActivity extends BaseActivity
         // Prepare the loader.  Either re-connect with an existing one,
         // or start a new one.
         getLoaderManager().initLoader(0, null, this);
+
+        songList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                songIds.clear();
+                Cursor tempCursor = (Cursor) mAdapter.getItem(position);
+                tempCursor.moveToFirst();
+                while (!tempCursor.isAfterLast()) {
+                    songIds.add(tempCursor.getInt(tempCursor.getColumnIndex(MediaStore.Audio.Media._ID)));
+                    tempCursor.moveToNext();
+                }
+                String data = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI + "/" + id;
+                Intent playMusic = new Intent();
+                playMusic.setDataAndType(Uri.parse(data), "audio/*");
+                ComponentName comp = new ComponentName("com.example.vincent.repeater", "com.example.vincent.repeater.PlayingActivity");
+                playMusic.setComponent(comp);
+                playMusic.putIntegerArrayListExtra("ids", songIds);
+                playMusic.putExtra("index", position);
+                startActivity(playMusic);
+
+            }
+        });
 
     }
 
@@ -148,4 +178,6 @@ public class LibraryActivity extends BaseActivity
         }
 
     }
+
+
 }
